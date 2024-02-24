@@ -43,8 +43,20 @@ namespace BookingBus.Controllers
         {
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
-            var result = await _Repository.GetALLEntityByDynamicQuery<appointment>(searchField, searchValue);
-            if(result == null) { return NotFound(); }
+            var appointmentList = await _Repository.GetALLEntityByDynamicQuery<appointment>(searchField, searchValue);
+            if(appointmentList == null) { return NotFound(); }
+
+
+            List<appointment> result = new List<appointment>();
+            foreach (var appointment in appointmentList)
+            {
+
+                if (appointment.IsAvailable == false || appointment.NumOfTicketIsAvalbel == 0) { continue; }
+
+                result.Add(appointment);
+            }
+
+
 
             FilterHistory model = new FilterHistory
             {userid = userId,
@@ -63,8 +75,16 @@ namespace BookingBus.Controllers
         {
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
-            var result = await _Repository.DateFilter<appointment>(searchField, year, month,day);
-            if (result == null)
+            List<appointment> appointmentList = await _Repository.DateFilter<appointment>(searchField, year, month,day);
+            List<appointment> result = new List<appointment>();
+            foreach (var appointment in appointmentList)
+            {
+               
+                if (appointment.IsAvailable == false || appointment.NumOfTicketIsAvalbel==0) { continue;}
+
+                 result.Add(appointment);
+            }
+            if (appointmentList == null)
             {
                 return NotFound();
             }
@@ -86,7 +106,7 @@ namespace BookingBus.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<appointment>> GetAvailableAppointment()
         {
-            var Result = await _Repository.GetAllTEntity<appointment>(e=>e.IsAvailable==true);
+            var Result = await _Repository.GetAllTEntity<appointment>(e=>e.IsAvailable==true&&e.NumOfTicketIsAvalbel>0);
             return Ok(Result);
         }
 

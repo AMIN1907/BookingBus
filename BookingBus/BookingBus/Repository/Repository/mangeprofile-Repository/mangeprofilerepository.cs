@@ -19,41 +19,22 @@ namespace BookingBus.Repository.Repository
             _db = db;
             _userManager = userManager;
         }
-        
 
-        
+
+
         public async Task<object> ChangePassword(ApplicationUser entity, ChangePassword changePassword)
-        { var errors = "";
+        {
+            var errors = new List<string>();
             var result = await _userManager.ChangePasswordAsync(entity, changePassword.CurrentPassword, changePassword.NewPassword);
-            if (changePassword.NewPassword == null || changePassword.ConfirmPassword == null || changePassword.CurrentPassword == null)
-            {
-                errors = "New Password and Confirm Password  are required";
-                return errors;
-            }
-            if (changePassword.NewPassword != changePassword.ConfirmPassword)
-            {
-                errors = ("New Password and Confirm Password not match");
-                return errors;
-            }
-            if (changePassword.NewPassword == changePassword.CurrentPassword)
-            {
-                 errors = ("New Password and Current Password are matching ");
-                    return errors;
-            }
             if (!result.Succeeded)
             {
-                 errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                  return errors;
+                errors.AddRange(result.Errors.Select(e => e.Description));
+                return errors;
             }
-            if (result.Succeeded)
-            {
-                    await _db.SaveChangesAsync();
-                    return entity;
-            }
-            return null;
-        
+            await save();
+            return entity;
+        }
 
-    }
 
         public async Task<ApplicationUser> updatat(ApplicationUser entity)
         {   

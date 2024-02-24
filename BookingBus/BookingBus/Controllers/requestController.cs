@@ -48,11 +48,15 @@ namespace BookingBus.Controllers
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
             var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Accept" && e.userid == userId);
-
-            {
-                if (Result == null) return NotFound();
-                else return Ok(Result);
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result) {
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
             }
+           
+            if (Result == null) return NotFound();
+                else return Ok(result);
+           
         }
 
 
@@ -68,40 +72,38 @@ namespace BookingBus.Controllers
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
             var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "decline" && e.userid == userId);
-
-
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result)
+            {
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
+            }
 
             if (Result == null) return NotFound();
-            return Ok(Result);
+            else return Ok(result);
 
         }
 
-
-
-
-
-
-
-        [HttpGet("PendingRequest ")]
+        [HttpGet("PendingRequest")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
 
-        public async Task<ActionResult<request>> GetPendingRequest()
+        public async Task<ActionResult<request>> getPending()
         {
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
             var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Pending" && e.userid == userId);
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result)
             {
-                if (Result == null) return NotFound();
-                else return Ok(Result);
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
             }
+
+            if (Result == null) return NotFound();
+            else return Ok(result);
+
         }
-
-
-
-
-
-
 
 
 

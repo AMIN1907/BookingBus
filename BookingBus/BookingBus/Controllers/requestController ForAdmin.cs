@@ -75,52 +75,69 @@ namespace BookingBus.Controllers
         }
 
     
-        [HttpGet("PendingRequest ")]
+        [HttpGet("getallPendingRequest ")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
 
         public async Task<ActionResult<request>> GetPendingRequest()
         {
-           
-            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Pending");
+            
+            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Pending" );
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result)
             {
-                if (Result == null) return NotFound();
-                else return Ok(Result);
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
             }
-        }
-
-
-     
-
-
-        [HttpGet("AcceptRequest")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-
-        public async Task<ActionResult<request>> GetAcceptRequest()
-        {
-            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Accept");
-            {
-                if (Result == null) return NotFound();
-                else return Ok(Result);
-            }
-        }
-
-
-
-        [HttpGet("declineRequest")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-
-        public async Task<ActionResult<request>> GetRejectedRequest()
-        {
-           
-            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "decline" );
-
-
 
             if (Result == null) return NotFound();
-            return Ok(Result);
+            else return Ok(result);
+
+        }
+
+
+
+
+
+        [HttpGet("getallAcceptRequest")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<ActionResult<request>> GetallAcceptRequest()
+        {
+
+            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Accept");
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result)
+            {
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
+            }
+
+            if (Result == null) return NotFound();
+            else return Ok(result);
+
+        }
+
+
+
+        [HttpGet("GetallRejectedRequest")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<ActionResult<request>> GetallRejectedRequest()
+        {
+
+            var Result = await _RequestRepository.GetAllTEntity<request>(e => e.status == "Reject");
+            List<appointment> result = new List<appointment>();
+            foreach (var entity in Result)
+            {
+                var RequestAppointment = await _RequestRepository.GetSpecialEntity<appointment>(e => e.id == entity.AppointmentID);
+                result.Add(RequestAppointment);
+            }
+
+            if (Result == null) return NotFound();
+            else return Ok(result);
 
         }
 

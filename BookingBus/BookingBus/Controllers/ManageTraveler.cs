@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using BookingBus.models;
 using BookingBus.Repository.Repository;
+using System.Collections.Generic;
 //using BookingBus.models.dto;
 
 
@@ -29,42 +30,62 @@ namespace BookingBus.Controllers
 
         }
 
+        private async Task<List<ProfileDto>> mapprofile(List<ApplicationUser> users) {
+            List< ProfileDto > Profile = new List< ProfileDto >();
+            foreach (var user in users) 
+            {
+                ProfileDto userdto = new ProfileDto()
+                {
+                    id = user.Id,
+                    fname = user.fname,
+                    lname = user.lname,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    barthday = user.Birthdate,
+                    PhoneNumber = user.PhoneNumber,
+                    ginder = user.ginder
+                };
+                Profile.Add(userdto);
+            }
+            
+            
+            return Profile; }
+
         [HttpGet("Get all  Traveler")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<ApplicationUser>> Getalluser()
+        public async Task<ActionResult<ProfileDto>> Getalluser()
         {
             var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>();
-            return Ok(Result);
+           
+            return Ok(await mapprofile(Result)) ;
         }
 
-        [HttpGet("Get Info For Any Traveler /string id  ")]
+        [HttpGet("Get Info For Any Traveler /string username  ")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUser>> Get(string userId) 
-
+        public async Task<ActionResult<ProfileDto>> Get(string username)
         {
-            if (userId == null)
-                return BadRequest();
-            var Result = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.Id == userId);
+            if (username == null)
+                return NotFound();
 
-            {
-                if (Result == null) return NotFound();
-                else return Ok(Result);
-                
-            }
+            var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>(e => e.UserName == username);
+
+            if (Result == null)
+                return NotFound();
+          
+            return Ok(await mapprofile(Result));
 
         }
 
-        
-        [HttpDelete("Delete Traveler  Account / string id ")]
+
+        [HttpDelete("Delete Traveler  Account / string username ")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUser>> Delete(string id)
-        {var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>(e => e.Id == id);
+        public async Task<ActionResult<ApplicationUser>> Delete(string username)
+        {var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>(e => e.UserName == username);
 
-            if (id == null)
+            if (username == null)
                 return BadRequest();
             else
             {
@@ -75,21 +96,16 @@ namespace BookingBus.Controllers
             await _ProfileRepository.save();
             return Ok(" the Account are Deleted successfully ");
 
-
-
-
-
-
         }
 
-        [HttpPut("updatedProfile/string:id")]
+        [HttpPut("updatedProfile/string username")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUser>> UpdateUserProfile(string id ,ProfileDto updatedProfile)
+        public async Task<ActionResult<ApplicationUser>> UpdateUserProfile(string username  ,ProfileDto updatedProfile)
         {
             
-            var existingUser = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.Id == id);
+            var existingUser = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.UserName == username);
 
             if (existingUser == null)
             {
@@ -114,7 +130,8 @@ namespace BookingBus.Controllers
                 existingUser.lname != updatedProfile.lname ||
                 existingUser.UserName != updatedProfile.UserName ||
                 existingUser.Email != updatedProfile.Email ||
-                existingUser.PhoneNumber != updatedProfile.PhoneNumber ||
+                existingUser.PhoneNumber != updatedProfile.PhoneNumber || 
+                existingUser.ginder != updatedProfile.ginder ||
                 existingUser.Birthdate != updatedProfile.barthday;
 
             if (!anyFieldUpdated)
@@ -127,6 +144,7 @@ namespace BookingBus.Controllers
             existingUser.lname = updatedProfile.lname ?? existingUser.lname;
             existingUser.UserName = updatedProfile.UserName ?? existingUser.UserName;
             existingUser.Email = updatedProfile.Email ?? existingUser.Email;
+            existingUser.ginder = updatedProfile.ginder ?? existingUser.ginder;
             existingUser.NormalizedUserName = (updatedProfile.UserName ?? existingUser.UserName).ToUpper();
             existingUser.NormalizedEmail = (updatedProfile.Email ?? existingUser.Email).ToUpper();
             existingUser.PhoneNumber = updatedProfile.PhoneNumber ?? existingUser.PhoneNumber;

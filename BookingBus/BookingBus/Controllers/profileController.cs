@@ -17,44 +17,62 @@ namespace BookingBus.Controllers
     [Authorize]
     public class profileController : ControllerBase
     {
-      
+
 
         private readonly ImangeprofileRepository _ProfileRepository;
 
-        public profileController(  ImangeprofileRepository ProfileRepository)
+        public profileController(ImangeprofileRepository ProfileRepository)
         {
-           
+
             _ProfileRepository = ProfileRepository;
-            
+
 
         }
-        
-       
+        private async Task<List<ProfileDto>> mapprofile(List<ApplicationUser> users)
+        {
+            List<ProfileDto> Profile = new List<ProfileDto>();
+            foreach (var user in users)
+            {
+                ProfileDto userdto = new ProfileDto()
+                {
+                    id = user.Id,
+                    fname = user.fname,
+                    lname = user.lname,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    barthday = user.Birthdate,
+                    PhoneNumber = user.PhoneNumber,
+                    ginder = user.ginder
+                };
+                Profile.Add(userdto);
+            }
+
+
+            return Profile;
+        }
+
         [HttpGet("get info")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-      
-
-
-        public async Task<ActionResult<ApplicationUser>> Get() 
+        public async Task<ActionResult<ApplicationUser>> Get()
 
         {
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
             if (userId == null)
                 return BadRequest();
-            var Result = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.Id == userId);
+            var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>(e => e.Id == userId);
 
             {
                 if (Result == null) return NotFound();
-                else return Ok(Result);
-                
+                return Ok(await mapprofile(Result));
+
             }
 
         }
 
-        [HttpGet("get info for anther user/string:id ")]
+        [HttpGet("get info for anther user/string username ")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -62,17 +80,17 @@ namespace BookingBus.Controllers
 
 
 
-        public async Task<ActionResult<ApplicationUser>> Getuser(string userId)
+        public async Task<ActionResult<ApplicationUser>> Getuser(string username)
 
         {
-           
-            if (userId == null)
+
+            if (username == null)
                 return BadRequest();
-            var Result = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.Id == userId);
+            var Result = await _ProfileRepository.GetAllTEntity<ApplicationUser>(e => e.UserName == username);
 
             {
                 if (Result == null) return NotFound();
-                else return Ok(Result);
+                else return Ok(await mapprofile(Result));
 
             }
 
@@ -96,7 +114,7 @@ namespace BookingBus.Controllers
                 if (Result == null) return NotFound();
                 else await _ProfileRepository.Remove(Result);
             }
-            
+
             await _ProfileRepository.save();
             return Ok(" Your Account are Deleted successfully ");
 
@@ -140,6 +158,7 @@ namespace BookingBus.Controllers
                 existingUser.lname != updatedProfile.lname ||
                 existingUser.UserName != updatedProfile.UserName ||
                 existingUser.Email != updatedProfile.Email ||
+                existingUser.ginder != updatedProfile.ginder ||
                 existingUser.PhoneNumber != updatedProfile.PhoneNumber ||
                 existingUser.Birthdate != updatedProfile.barthday;
 
@@ -153,6 +172,7 @@ namespace BookingBus.Controllers
             existingUser.lname = updatedProfile.lname ?? existingUser.lname;
             existingUser.UserName = updatedProfile.UserName ?? existingUser.UserName;
             existingUser.Email = updatedProfile.Email ?? existingUser.Email;
+            existingUser.ginder = updatedProfile.ginder ?? existingUser.ginder;
             existingUser.NormalizedUserName = (updatedProfile.UserName ?? existingUser.UserName).ToUpper();
             existingUser.NormalizedEmail = (updatedProfile.Email ?? existingUser.Email).ToUpper();
             existingUser.PhoneNumber = updatedProfile.PhoneNumber ?? existingUser.PhoneNumber;
@@ -169,31 +189,50 @@ namespace BookingBus.Controllers
 
 
 
-        [HttpPut("profile/changepassword")]
+
+        [HttpPut("changepassword")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> ChangePassword([FromBody] ChangePassword changePasswordModel)
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePassword changePassword)
         {
             var userIdClaim = (HttpContext.User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "uid");
             var userId = userIdClaim.Value;
             var user = await _ProfileRepository.GetSpecialEntity<ApplicationUser>(e => e.Id == userId);
 
             if (user == null)
-            {return NotFound("User not found");}
+            { return NotFound("User not found"); }
 
-
-            var result = await _ProfileRepository.ChangePassword(user, changePasswordModel);
-
-            if (result == null )
+            var errors = new List<string>();
+            // Check if any required fields are null
+            if (changePassword.NewPassword == null || changePassword.ConfirmPassword == null || changePassword.CurrentPassword == null)
             {
-
-                return BadRequest();
+                errors.Add("New Password, Confirm Password, and Current Password are required");
             }
 
+            // Check if New Password matches Confirm Password
+            if (changePassword.NewPassword != changePassword.ConfirmPassword)
+            {
+                errors.Add("New Password and Confirm Password do not match");
+            }
+
+            // Check if New Password is the same as Current Password
+            if (changePassword.NewPassword == changePassword.CurrentPassword)
+            {
+                errors.Add("New Password and Current Password are the same");
+            }
+            // If there are any errors, return them
+            if (errors.Any())
+            {
+                return BadRequest(errors);
+            }
+            var result = await _ProfileRepository.ChangePassword(user, changePassword);
+
+
+            if (result is not ApplicationUser)
+                return BadRequest(result);
             return Ok(result);
         }
-
 
 
 
